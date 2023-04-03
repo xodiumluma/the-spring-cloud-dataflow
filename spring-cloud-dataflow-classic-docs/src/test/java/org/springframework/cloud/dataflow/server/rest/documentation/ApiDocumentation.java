@@ -73,7 +73,10 @@ public class ApiDocumentation extends BaseDocumentation {
 
 	@Test
 	public void index() throws Exception {
-		this.mockMvc.perform(get("/")).andDo(print()).andExpect(status().isOk()).andDo(this.documentationHandler.document(links(
+		this.mockMvc.perform(get("/"))
+				.andDo(print())
+				.andExpect(status().isOk())
+				.andDo(this.documentationHandler.document(links(
 				linkWithRel("about").description(
 						"Access meta information, including enabled " + "features, security info, version information"),
 
@@ -119,6 +122,9 @@ public class ApiDocumentation extends BaseDocumentation {
 				linkWithRel("tasks/platforms").description("Provides platform accounts for launching tasks.  The results can be filtered to show the platforms that support scheduling by adding a request parameter of 'schedulesEnabled=true"),
 				linkWithRel("tasks/logs").description("Retrieve the task application log"),
 
+				linkWithRel("schema/versions").description("List of Spring Boot related schemas"),
+				linkWithRel("schema/targets").description("List of schema targets"),
+
 				linkWithRel("streams/definitions").description("Exposes the Streams resource"),
 				linkWithRel("streams/definitions/definition").description("Handle a specific Stream definition"),
 				linkWithRel("streams/validation").description("Provides the validation for a stream definition"),
@@ -144,6 +150,10 @@ public class ApiDocumentation extends BaseDocumentation {
 						fieldWithPath("['" + Version.REVISION_KEY + "']").description("Incremented each time a change is implemented in this REST API"),
 						fieldWithPath("_links.audit-records.href").description("Link to the audit records"),
 						fieldWithPath("_links.dashboard.href").description("Link to the dashboard"),
+
+						fieldWithPath("_links.schema/versions.href").description("Link to the schema/versions"),
+						fieldWithPath("_links.schema/targets.href").description("Link to the schema/targets"),
+
 						fieldWithPath("_links.streams/definitions.href").description("Link to the streams/definitions"),
 						fieldWithPath("_links.streams/definitions/definition.href").description("Link to the streams/definitions/definition"),
 						fieldWithPath("_links.streams/definitions/definition.templated").type(JsonFieldType.BOOLEAN).optional().description("Link streams/definitions/definition is templated"),
