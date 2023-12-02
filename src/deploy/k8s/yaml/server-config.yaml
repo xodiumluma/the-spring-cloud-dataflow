@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scdf-server
+  labels:
+    app: scdf-server
+data:
+  application-kubernetes.yaml: |-
+    logging:
+      level:
+        root: info
+        org.springframework: debug
+    management:
+      defaults:
+        metrics:
+          export:
+            enabled: false
+    maven:
+      remoteRepositories:
+        sprinklerRepo: 
+          url: https://maven.pkg.github.com/corneil/sprinkler-demos
+          username: 'corneil'
+          password: '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'
+    spring:
+      output:
+        ansi:
+          enabled: NEVER
+      cloud:
+        deployer:
+          kubernetes:
+            imagePullPolicy: IfNotPresent
+            imagePullSecret: registry-key
+            containerSecurityContext:
+              runAsUser:
+        dataflow:          
+          metrics.dashboard:
+            url: 'http://localhost:3000'
+          task:
+            platform:
+              kubernetes:
+                accounts:
+                  default:
+                    imagePullPolicy: IfNotPresent
+                    imagePullSecret: registry-key
+                    limits:
+                      memory: 1024Mi

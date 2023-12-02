@@ -17,14 +17,17 @@ package org.springframework.cloud.dataflow.server.controller;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Map;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.info.BuildInfoContributor;
+import org.springframework.boot.actuate.info.GitInfoContributor;
+import org.springframework.boot.actuate.info.Info;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.common.security.support.SecurityStateBean;
 import org.springframework.cloud.dataflow.core.Launcher;
@@ -53,6 +56,7 @@ import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -71,6 +75,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
  * @author Gunnar Hillert
  * @author Glenn Renfro
  * @author Ilayaperumal Gopinathan
+ * @author Felipe Gutierrez
  */
 @RestController
 @RequestMapping("/about")
@@ -101,14 +106,32 @@ public class AboutController {
 
 	private DataflowMetricsProperties dataflowMetricsProperties;
 
+	private ObjectProvider<GitInfoContributor> gitInfoContributor;
+
+	private ObjectProvider<BuildInfoContributor> buildInfoContributor;
+
+	@Deprecated
 	public AboutController(StreamDeployer streamDeployer, LauncherRepository launcherRepository, FeaturesProperties featuresProperties,
-			VersionInfoProperties versionInfoProperties, SecurityStateBean securityStateBean, DataflowMetricsProperties monitoringProperties) {
+						   VersionInfoProperties versionInfoProperties, SecurityStateBean securityStateBean, DataflowMetricsProperties monitoringProperties) {
 		this.streamDeployer = streamDeployer;
 		this.launcherRepository = launcherRepository;
 		this.featuresProperties = featuresProperties;
 		this.versionInfoProperties = versionInfoProperties;
 		this.securityStateBean = securityStateBean;
 		this.dataflowMetricsProperties = monitoringProperties;
+	}
+
+	public AboutController(StreamDeployer streamDeployer, LauncherRepository launcherRepository, FeaturesProperties featuresProperties,
+			VersionInfoProperties versionInfoProperties, SecurityStateBean securityStateBean, DataflowMetricsProperties monitoringProperties,
+						   ObjectProvider<GitInfoContributor> gitInfoContributor, ObjectProvider<BuildInfoContributor> buildInfoContributor) {
+		this.streamDeployer = streamDeployer;
+		this.launcherRepository = launcherRepository;
+		this.featuresProperties = featuresProperties;
+		this.versionInfoProperties = versionInfoProperties;
+		this.securityStateBean = securityStateBean;
+		this.dataflowMetricsProperties = monitoringProperties;
+		this.gitInfoContributor = gitInfoContributor;
+		this.buildInfoContributor = buildInfoContributor;
 	}
 
 	/**
@@ -224,6 +247,8 @@ public class AboutController {
 
 		aboutResource.add(linkTo(AboutController.class).withSelfRel());
 
+		addGitAndBuildInfoIfAvailable(aboutResource);
+
 		return aboutResource;
 	}
 
@@ -299,9 +324,8 @@ public class AboutController {
 	}
 
 	private String repoSelector(String version) {
-		final String REPO_SNAPSHOT_ROOT = "https://repo.spring.io/libs-snapshot";
-		final String REPO_MILESTONE_ROOT = "https://repo.spring.io/libs-milestone";
-		final String REPO_RELEASE_ROOT = "https://repo.spring.io/release";
+		final String REPO_SNAPSHOT_ROOT = "https://repo.spring.io/snapshot";
+		final String REPO_MILESTONE_ROOT = "https://repo.spring.io/milestone";
 		final String MAVEN_ROOT = "https://repo.maven.apache.org/maven2";
 
 		String result = MAVEN_ROOT;
@@ -314,9 +338,17 @@ public class AboutController {
 		else if (version.contains(".RC")) {
 			result = REPO_MILESTONE_ROOT;
 		}
-		else if (version.contains(".RELEASE")) {
-			result = REPO_RELEASE_ROOT;
-		}
 		return result;
 	}
+
+	private void addGitAndBuildInfoIfAvailable(AboutResource aboutResource) {
+		Info.Builder builder = new Info.Builder();
+		gitInfoContributor.ifAvailable(c -> c.contribute(builder));
+		buildInfoContributor.ifAvailable(c -> c.contribute(builder));
+		Map<String, Object> details = builder.build().getDetails();
+		if (!ObjectUtils.isEmpty(details)) {
+			aboutResource.setGitAndBuildInfo(details);
+		}
+	}
+
 }

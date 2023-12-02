@@ -49,6 +49,7 @@ import org.springframework.web.client.RestTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -215,10 +216,18 @@ public class ApplicationConfigurationMetadataResolverAutoConfigurationTest {
 				@Qualifier("containerRestTemplate") RestTemplate containerRestTemplate,
 				@Qualifier("containerRestTemplateWithHttpProxy") RestTemplate containerRestTemplateWithHttpProxy) {
 			ContainerImageRestTemplateFactory containerImageRestTemplateFactory = Mockito.mock(ContainerImageRestTemplateFactory.class);
-			when(containerImageRestTemplateFactory.getContainerRestTemplate(eq(true), eq(false))).thenReturn(noSslVerificationContainerRestTemplate);
-			when(containerImageRestTemplateFactory.getContainerRestTemplate(eq(true), eq(true))).thenReturn(noSslVerificationContainerRestTemplateWithHttpProxy);
-			when(containerImageRestTemplateFactory.getContainerRestTemplate(eq(false), eq(false))).thenReturn(containerRestTemplate);
-			when(containerImageRestTemplateFactory.getContainerRestTemplate(eq(false), eq(true))).thenReturn(containerRestTemplateWithHttpProxy);
+			when(containerImageRestTemplateFactory.getContainerRestTemplate(eq(true), eq(false),
+				anyMap()))
+				.thenReturn(noSslVerificationContainerRestTemplate);
+			when(containerImageRestTemplateFactory.getContainerRestTemplate(eq(true), eq(true),
+				anyMap()))
+				.thenReturn(noSslVerificationContainerRestTemplateWithHttpProxy);
+			when(containerImageRestTemplateFactory.getContainerRestTemplate(eq(false), eq(false),
+				anyMap()))
+				.thenReturn(containerRestTemplate);
+			when(containerImageRestTemplateFactory.getContainerRestTemplate(eq(false), eq(true),
+				anyMap()))
+				.thenReturn(containerRestTemplateWithHttpProxy);
 			return containerImageRestTemplateFactory;
 		}
 

@@ -13,6 +13,15 @@ inputs:
   package-name:
     description: package name
     required: true
+  project-directory:
+    description: The working directory
+    required: true
+  SRP_CLIENT_ID:
+    description: secrets.SRP_CLIENT_ID
+    required: false
+  SRP_CLIENT_SECRET:
+    description: secrets.SRP_CLIENT_SECRET
+    required: false
 outputs:
   bundle-path:
     description: Location path where bundle was build
@@ -24,37 +33,27 @@ runs:
   - name: Tanzu Dance
     id: tanzu-dance
     env:
-      VERSION: ${{ inputs.version }}
+      PACKAGE_VERSION: ${{ inputs.version }}
       PACKAGE_BUNDLE_REPOSITORY: ${{ inputs.package-bundle-repository }}
       PACKAGE_NAME: ${{ inputs.package-name }}
       REPO_BUNDLE_TEMPLATE: ${{ inputs.repo-bundle-template }}
       REPO_BUNDLE_RENDERED: ${{ runner.temp }}/generated/reporendered
       REPO_BUNDLE_GENERATED: ${{ runner.temp }}/generated/repobundle
+      SRP_CLIENT_ID: ${{ inputs.SRP_CLIENT_ID }}
+      SRP_CLIENT_SECRET: ${{ inputs.SRP_CLIENT_SECRET }}
     shell: bash
+    working-directory: ${{ inputs.project-directory }}
     run: |
-      echo "::set-output name=bundle-path::$REPO_BUNDLE_GENERATED"
-
-      mkdir -p $REPO_BUNDLE_GENERATED/packages
-      mkdir -p $REPO_BUNDLE_GENERATED/.imgpkg
-      ytt \
-        -f $REPO_BUNDLE_TEMPLATE \
-        --output-files $REPO_BUNDLE_RENDERED \
-        --data-value-yaml project.version=$VERSION \
-        --data-value-yaml repository=$PACKAGE_BUNDLE_REPOSITORY \
-        --data-value-yaml package.name=$PACKAGE_NAME \
-        --data-value-yaml package.timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
-        --file-mark 'package.yml:type=text-plain' \
-        --file-mark 'metadata.yml:type=text-plain' \
-        --file-mark 'values-schema.yml:type=text-plain' \
-        --file-mark 'values-schema.star:type=text-plain' \
-        --file-mark 'values-schema.star:for-output=true' \
-        --file-mark 'versions.yml:type=text-template'
-
-      ytt \
-        -f $REPO_BUNDLE_RENDERED \
-        --file-mark 'values-schema.yml:type=data' \
-        > $REPO_BUNDLE_GENERATED/packages/packages.yml
-
-      kbld \
-        --file $REPO_BUNDLE_GENERATED/packages \
-        --imgpkg-lock-output $REPO_BUNDLE_GENERATED/.imgpkg/images.yml
+      echo "bundle-path=$REPO_BUNDLE_GENERATED" >> $GITHUB_OUTPUT
+      SCDF_DIR="${{ inputs.project-directory || '.' }}"      
+      if [ "$USE_SRP" == "true" ]; then
+        if [ "$SRP_SCRIPTS" == "" ]; then
+          echo "SRP_SCRIPTS not defined"
+          exit 2
+        fi
+        export OBSERVATION=repository-bundle
+        export OUTPUT_VERSION=$PACKAGE_VERSION
+        $SRP_SCRIPTS/run-under-observer.sh "${{ github.action_path }}/build-repository-bundle.sh"
+      else 
+        "${{ github.action_path }}/build-repository-bundle.sh"
+      fi

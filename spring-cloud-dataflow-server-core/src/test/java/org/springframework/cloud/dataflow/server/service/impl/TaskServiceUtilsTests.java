@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 the original author or authors.
+ * Copyright 2018-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.springframework.cloud.dataflow.server.service.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.util.StringUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -181,6 +183,22 @@ public class TaskServiceUtilsTests {
 		assertThat(result.size()).isEqualTo(2);
 		assertThat(result.get("foo")).isEqualTo("bar");
 		assertThat(result.get("test")).isEqualTo("baz");
+	}
+
+	@Test
+	public void testExtractAppLabelProperties() {
+		Map<String, String> taskDeploymentProperties = new HashMap<>();
+		taskDeploymentProperties.put("app.myapplabel.foo", "bar");
+		taskDeploymentProperties.put("myappname.none", "boo");
+		taskDeploymentProperties.put("app.myappname.foo", "boo");
+		taskDeploymentProperties.put("app.myapplabel.myprop", "baz");
+		taskDeploymentProperties.put("app.none.test", "boo");
+		Map<String, String> result = TaskServiceUtils.extractAppProperties("myappname", "myapplabel",
+				taskDeploymentProperties);
+
+		assertThat(result.size()).isEqualTo(2);
+		assertThat(result.get("foo")).isEqualTo("bar");
+		assertThat(result.get("myprop")).isEqualTo("baz");
 	}
 
 	@Test
@@ -360,6 +378,45 @@ public class TaskServiceUtilsTests {
 		boolean result = TaskServiceUtils.isUseUserAccessToken(taskConfigurationProperties, null);
 
 		assertFalse("Use user access token should be false", result);
+	}
+
+	@Test
+	public void testConvertCommandLineArgsToCTRFormat() {
+		validateSingleCTRArgs("app.a.0=foo=bar", "--composed-task-app-arguments.base64_YXBwLmEuMA=foo=bar");
+		validateSingleCTRArgs("app.a.0=foo", "--composed-task-app-arguments.base64_YXBwLmEuMA=foo");
+		validateSingleCTRArgs("app.foo.bar", "--composed-task-app-arguments.app.foo.bar");
+		validateSingleCTRArgs("foo=bar", "foo=bar");
+	}
+
+	@Test
+	public void testConvertCommandLineArgsToCTRFormatWithNull() {
+		assertThatIllegalArgumentException().isThrownBy(() ->
+						TaskServiceUtils.convertCommandLineArgsToCTRFormat(Collections.singletonList(null)))
+				.withMessage("Command line Arguments for ComposedTaskRunner contain a null entry.");
+	}
+
+	@Test
+	public void testConvertMultipleCommandLineArgsToCTRFormat() {
+		List<String> originalList = new ArrayList<>();
+		originalList.add("app.a.0=foo=bar");
+		originalList.add("app.b.0=baz=boo");
+		originalList.add("app.c.0=val=buz");
+		List<String> expectedList = new ArrayList<>();
+		expectedList.add("--composed-task-app-arguments.base64_YXBwLmEuMA=foo=bar");
+		expectedList.add("--composed-task-app-arguments.base64_YXBwLmIuMA=baz=boo");
+		expectedList.add("--composed-task-app-arguments.base64_YXBwLmMuMA=val=buz");
+		validateCTRArgs(expectedList, TaskServiceUtils.convertCommandLineArgsToCTRFormat(originalList));
+	}
+
+	private void validateSingleCTRArgs(String original, String expected) {
+		List<String> testArgs = Collections.singletonList(original);
+		validateCTRArgs(Collections.singletonList(expected),
+				TaskServiceUtils.convertCommandLineArgsToCTRFormat(testArgs));
+
+	}
+
+	private void validateCTRArgs(List<String> expectedList, List<String> resultList) {
+		assertThat(resultList).containsExactlyInAnyOrderElementsOf(expectedList);
 	}
 
 	private TaskNode parse(String dsltext) {

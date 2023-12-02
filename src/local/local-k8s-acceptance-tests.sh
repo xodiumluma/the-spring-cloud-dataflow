@@ -8,6 +8,10 @@ if [ "$1" = "-h" ]; then
   echo "    otherwise the profile will be test-all with -Dtest and the parameter"
   exit 0
 fi
+if [ -z "$BASH_VERSION" ]; then
+    echo "This script requires Bash. Use: bash $0 $*"
+    exit 0
+fi
 SCDIR=$(realpath $(dirname "$(readlink -f "${BASH_SOURCE[0]}")"))
 ROOTDIR=$(realpath $SCDIR/../..)
 
@@ -53,6 +57,7 @@ fi
 echo "DATAFLOW_IP=$DATAFLOW_IP"
 pushd "$ROOTDIR/../spring-cloud-dataflow-acceptance-tests"
 echo "EXTRA=$EXTRA" | tee build.log
+set -o pipefail
 ./mvnw -Dspring.profiles.active=blah \
   -DPLATFORM_TYPE=kubernetes \
   -DNAMESPACE=$NS \

@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-dataflow-parent</artifactId>
-		<version>2.11.0-SNAPSHOT</version>
+		<version>2.11.2-SNAPSHOT</version>
 		<relativePath>../spring-cloud-dataflow-parent</relativePath>
 	</parent>
 	<artifactId>spring-cloud-dataflow-server</artifactId>
@@ -18,7 +18,9 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
+		<oracle-driver-ojdbc8.version>21.9.0.0</oracle-driver-ojdbc8.version>
 		<maven-javadoc-plugin.version>3.4.1</maven-javadoc-plugin.version>
+		<maven-source-plugin.version>3.3.0</maven-source-plugin.version>
 		<checkstyle.config.location>../src/checkstyle/checkstyle.xml</checkstyle.config.location>
 		<failIfNoTests>true</failIfNoTests>
 	</properties>
@@ -30,20 +32,49 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-dataflow-ui</artifactId>
-			<version>${project.version}</version>
+			<version>${dataflow.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-dataflow-server</artifactId>
-			<version>${project.version}</version>
+			<version>${dataflow.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-config</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.bouncycastle</groupId>
+					<artifactId>bcprov-jdk15on</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.bouncycastle</groupId>
+					<artifactId>bcpkix-jdk15on</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.bouncycastle</groupId>
+					<artifactId>bcutil-jdk15on</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>io.pivotal.spring.cloud</groupId>
 			<artifactId>spring-cloud-services-starter-config-client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk18on</artifactId>
+			<version>1.76</version>
+		</dependency>
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcpkix-jdk18on</artifactId>
+			<version>1.75</version>
+		</dependency>
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcutil-jdk18on</artifactId>
+			<version>1.75</version>
 		</dependency>
 		<dependency>
 			<groupId>io.fabric8</groupId>
@@ -52,11 +83,19 @@
 		<dependency>
 			<groupId>org.mariadb.jdbc</groupId>
 			<artifactId>mariadb-java-client</artifactId>
-			<version>3.1.2</version>
+			<version>[3.1.2,)</version>
 		</dependency>
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
+			<version>2.2.222</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-dataflow-test</artifactId>
+			<version>${project.version}</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -85,15 +124,9 @@
 			<artifactId>json-unit-assertj</artifactId>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.awaitility</groupId>
 			<artifactId>awaitility</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.assertj</groupId>
-			<artifactId>assertj-core</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -132,13 +165,21 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
+			<groupId>com.ibm.db2</groupId>
+			<artifactId>jcc</artifactId>
+			<version>11.5.8.0</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter-api</artifactId>
+			<groupId>com.oracle.database.jdbc</groupId>
+			<artifactId>ojdbc8</artifactId>
+			<version>${oracle-driver-ojdbc8.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>8.0.33</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -164,18 +205,43 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<dependencies>
-					<dependency>
-						<groupId>org.apache.maven.surefire</groupId>
-						<artifactId>surefire-junit47</artifactId>
-						<version>3.0.0</version>
-					</dependency>
-				</dependencies>
+				<configuration>
+					<threadCount>1</threadCount>
+					<forkCount>1</forkCount>
+				</configuration>
 				<executions>
 					<execution>
 						<goals>
 							<goal>test</goal>
 						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>${maven-javadoc-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>javadoc</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<phase>prepare-package</phase>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>${maven-source-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>source</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<phase>package</phase>
 					</execution>
 				</executions>
 			</plugin>
@@ -191,6 +257,23 @@
 							<goal>repackage</goal>
 						</goals>
 					</execution>
+					<execution>
+						<id>build-info</id>
+						<goals>
+							<goal>build-info</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>test-jar</goal>
+						</goals>
+					</execution>
 				</executions>
 			</plugin>
 		</plugins>
@@ -201,6 +284,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-report-plugin</artifactId>
+				<version>3.0.0</version>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -217,6 +301,17 @@
 			</properties>
 			<build>
 				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<version>3.0.0</version>
+						<configuration>
+							<threadCount>1</threadCount>
+							<forkCount>1</forkCount>
+							<skipTests>true</skipTests>
+							<failIfNoTests>false</failIfNoTests>
+						</configuration>
+					</plugin>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-failsafe-plugin</artifactId>
@@ -261,7 +356,7 @@
 				<repository>
 					<id>spring-milestones</id>
 					<name>Spring Milestones</name>
-					<url>https://repo.spring.io/libs-milestone</url>
+					<url>https://repo.spring.io/milestone</url>
 					<snapshots>
 						<enabled>false</enabled>
 					</snapshots>
@@ -279,7 +374,7 @@
 				<pluginRepository>
 					<id>spring-snapshots</id>
 					<name>Spring Snapshots</name>
-					<url>https://repo.spring.io/libs-snapshot</url>
+					<url>https://repo.spring.io/snapshot</url>
 					<snapshots>
 						<enabled>true</enabled>
 					</snapshots>
@@ -287,12 +382,22 @@
 				<pluginRepository>
 					<id>spring-milestones</id>
 					<name>Spring Milestones</name>
-					<url>https://repo.spring.io/libs-milestone</url>
+					<url>https://repo.spring.io/milestone</url>
 					<snapshots>
 						<enabled>false</enabled>
 					</snapshots>
 				</pluginRepository>
 			</pluginRepositories>
+		</profile>
+		<profile>
+			<id>local-dev-oracle</id>
+			<dependencies>
+				<dependency>
+					<groupId>com.oracle.database.jdbc</groupId>
+					<artifactId>ojdbc8</artifactId>
+					<version>${oracle-driver-ojdbc8.version}</version>
+				</dependency>
+			</dependencies>
 		</profile>
 	</profiles>
 </project>

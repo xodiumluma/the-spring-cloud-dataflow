@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+if [ -z "$BASH_VERSION" ]; then
+    echo "This script requires Bash. Use: bash $0 $*"
+    exit 0
+fi
 SCDIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 SCDIR=$(realpath $SCDIR)
 ROOT_DIR=$(realpath $SCDIR/../..)
@@ -6,7 +10,7 @@ ROOT_DIR=$(realpath $SCDIR/../..)
 if [ "$1" != "" ]; then
     VER=$1
 else
-    VER=2.11.0-SNAPSHOT
+    VER=2.11.2-SNAPSHOT
 fi
 
 function download_deps() {
@@ -18,10 +22,10 @@ function download_deps() {
     MILESTONE=$(echo "$DEP" | grep -c "\-M")
     if ((SNAPSHOT > 0)); then
         INC_VER=true
-        URL="https://repo.spring.io/libs-snapshot"
+        URL="https://repo.spring.io/snapshot"
     elif ((MILESTONE > 0)); then
         INC_VER=false
-        URL="https://repo.spring.io/libs-milestone"
+        URL="https://repo.spring.io/milestone"
     else
         INC_VER=false
         URL="https://repo.maven.apache.org/maven2"
@@ -92,7 +96,7 @@ function download_deps() {
 }
 
 set -e
-APPS=("spring-cloud-dataflow-server" "spring-cloud-dataflow-composed-task-runner" "spring-cloud-dataflow-single-step-batch-job")
+APPS=("spring-cloud-dataflow-server" "spring-cloud-dataflow-composed-task-runner" "spring-cloud-dataflow-single-step-batch-job" "spring-cloud-dataflow-shell")
 for app in ${APPS[@]}; do
     APP_PATH="$app/target"
     download_deps "org.springframework.cloud:$app:$VER" "$ROOT_DIR/$APP_PATH"
@@ -102,3 +106,5 @@ for app in ${TS_APPS[@]}; do
     APP_PATH="spring-cloud-dataflow-tasklauncher/$app/target"
     download_deps "org.springframework.cloud:$app:$VER" $ROOT_DIR/$APP_PATH
 done
+APP_PATH="spring-cloud-skipper/spring-cloud-skipper-server/target"
+download_deps "org.springframework.cloud:spring-cloud-skipper-server:$VER" $ROOT_DIR/$APP_PATH

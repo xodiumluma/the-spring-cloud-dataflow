@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.springframework.cloud</groupId>
-	<version>2.11.0-SNAPSHOT</version>
+	<version>2.11.2-SNAPSHOT</version>
 	<artifactId>spring-cloud-dataflow-dependencies-parent</artifactId>
 	<packaging>pom</packaging>
 	<name>Spring Cloud Dataflow Dependencies Parent</name>
@@ -36,6 +36,8 @@
 	</developers>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<!-- NOTE: this needs to be updated and kept in sync w/ the project.version -->
+		<dataflow.version>2.11.2-SNAPSHOT</dataflow.version>
 	</properties>
 	<profiles>
 		<profile>
@@ -52,7 +54,7 @@
 				<repository>
 					<id>spring-snapshots</id>
 					<name>Spring Snapshots</name>
-					<url>https://repo.spring.io/libs-snapshot</url>
+					<url>https://repo.spring.io/snapshot</url>
 					<snapshots>
 						<enabled>true</enabled>
 					</snapshots>
@@ -60,7 +62,7 @@
 				<repository>
 					<id>spring-milestones</id>
 					<name>Spring Milestones</name>
-					<url>https://repo.spring.io/libs-milestone</url>
+					<url>https://repo.spring.io/milestone</url>
 					<snapshots>
 						<enabled>true</enabled>
 					</snapshots>
@@ -78,7 +80,7 @@
 				<pluginRepository>
 					<id>spring-snapshots</id>
 					<name>Spring Snapshots</name>
-					<url>https://repo.spring.io/libs-snapshot</url>
+					<url>https://repo.spring.io/snapshot</url>
 					<snapshots>
 						<enabled>true</enabled>
 					</snapshots>
@@ -86,7 +88,7 @@
 				<pluginRepository>
 					<id>spring-milestones</id>
 					<name>Spring Milestones</name>
-					<url>https://repo.spring.io/libs-milestone</url>
+					<url>https://repo.spring.io/milestone</url>
 					<snapshots>
 						<enabled>false</enabled>
 					</snapshots>
